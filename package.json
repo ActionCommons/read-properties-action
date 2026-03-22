@@ -1,17 +1,17 @@
 {
-  "name": "typescript-action",
+  "name": "read-properties-action",
   "description": "GitHub Actions TypeScript template",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "author": "",
   "type": "module",
   "private": true,
-  "homepage": "https://github.com/actions/typescript-action",
+  "homepage": "https://github.com/actions/read-properties-action",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/typescript-action.git"
+    "url": "git+https://github.com/actions/read-properties-action.git"
   },
   "bugs": {
-    "url": "https://github.com/actions/typescript-action/issues"
+    "url": "https://github.com/actions/read-properties-action/issues"
   },
   "keywords": [
     "actions"
@@ -65,5 +65,8 @@
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "*"
+  },
+  "overrides": {
+    "undici": "6.24.0"
   }
 }
