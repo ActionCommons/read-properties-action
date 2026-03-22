@@ -1,23 +1,87 @@
-name: The name of your action here
-description: Provide a description here
-author: Your name or organization here
-
-# Add your action's branding here. This will appear on the GitHub Marketplace.
+#
+# © 2026-present Action Commons (https://github.com/ActionCommons)
+#
+name: Read Properties Action
+description: >
+  Reads one or more Java-style .properties files and exposes every key-value
+  pair as a step output in the form <filename>.<key>.
+author: Action Commons (https://github.com/ActionCommons)
+# https://feathericons.com — pick an icon that fits your action.
 branding:
-  icon: heart
-  color: red
+  icon: file-text
+  color: blue
 
-# Define your inputs here.
+# ---------------------------------------------------------------------------
+# Inputs
+# ---------------------------------------------------------------------------
+#
+# At least one of `file` or `files` must be provided.
+#
+# Property filtering works the same way for both:
+#   (none)             → read ALL properties  (default / "all" behaviour)
+#   *-property         → read a SINGLE named property
+#   *-properties       → read a NEWLINE-SEPARATED LIST of named properties
+#
+# ---------------------------------------------------------------------------
 inputs:
-  milliseconds:
-    description: Your input description here
-    required: true
-    default: '1000'
+  # ── Single-file variant ──────────────────────────────────────────────────
+  file:
+    description: >
+      Path to a single .properties file. Required when `files` is not provided.
+    required: false
 
-# Define your outputs here.
-outputs:
-  time:
-    description: Your output description here
+  file-property:
+    description: >
+      A single property key to read from `file`. When set, only this one key is
+      exposed as an output. Mutually exclusive with `file-properties`.
+    required: false
+
+  file-properties:
+    description: >
+      A newline-separated list of property keys to read from `file`. When set,
+      only these keys are exposed as outputs. Mutually exclusive with
+      `file-property`.
+    required: false
+
+  # ── Multi-file variant ───────────────────────────────────────────────────
+  files:
+    description: >
+      A newline-separated list of .properties file paths. Required when `file`
+      is not provided.
+    required: false
+
+  files-property:
+    description: >
+      A single property key to read from EVERY file listed in `files`. Mutually
+      exclusive with `files-properties`.
+    required: false
+
+  files-properties:
+    description: >
+      A newline-separated list of property keys to read from EVERY file listed
+      in `files`. Mutually exclusive with `files-property`.
+    required: false
+
+# ---------------------------------------------------------------------------
+# Outputs
+# ---------------------------------------------------------------------------
+#
+# Outputs are set dynamically at runtime and cannot be enumerated statically.
+#
+# The output key format is:  <stem>.<property-key>
+#
+#   stem          = filename without extension, e.g. "config" for config.properties
+#   property-key  = the key as it appears in the .properties file
+#
+# When two files share the same stem the second receives a "1" suffix,
+# the third a "2" suffix, and so on:
+#
+#   steps.read.outputs['config.host']   ← first  config.properties
+#   steps.read.outputs['config1.host']  ← second config.properties
+#
+# Access via bracket notation in expressions when the key contains a dot:
+#   ${{ steps.read.outputs['config.host'] }}
+#
 
 runs:
   using: node24

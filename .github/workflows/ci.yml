@@ -53,12 +53,114 @@ jobs:
         id: checkout
         uses: actions/checkout@v6
 
-      - name: Test Local Action
-        id: test-action
+      # ── Test 1: single file, all properties ──────────────────────────────
+      - name: Read all properties from a single file
+        id: read-all
         uses: ./
         with:
-          milliseconds: 2000
+          file: __fixtures__/config.properties
 
-      - name: Print Output
-        id: output
-        run: echo "${{ steps.test-action.outputs.time }}"
+      - name: Verify all-properties outputs
+        run: |
+          if [ "${{ steps.read-all.outputs['config.db.host'] }}" != "localhost" ]; then
+            echo "FAIL: config.db.host expected 'localhost', got '${{ steps.read-all.outputs['config.db.host'] }}'"
+            exit 1
+          fi
+          if [ "${{ steps.read-all.outputs['config.db.port'] }}" != "5432" ]; then
+            echo "FAIL: config.db.port expected '5432', got '${{ steps.read-all.outputs['config.db.port'] }}'"
+            exit 1
+          fi
+          if [ "${{ steps.read-all.outputs['config.app.name'] }}" != "My Application" ]; then
+            echo "FAIL: config.app.name expected 'My Application', got '${{ steps.read-all.outputs['config.app.name'] }}'"
+            exit 1
+          fi
+          echo "PASS: single file, all properties"
+
+      # ── Test 2: single file, single property filter ───────────────────────
+      - name: Read one property from a single file
+        id: read-one
+        uses: ./
+        with:
+          file: __fixtures__/config.properties
+          file-property: app.version
+
+      - name: Verify single-property output
+        run: |
+          if [ "${{ steps.read-one.outputs['config.app.version'] }}" != "1.0.0" ]; then
+            echo "FAIL: config.app.version expected '1.0.0', got '${{ steps.read-one.outputs['config.app.version'] }}'"
+            exit 1
+          fi
+          echo "PASS: single file, single property filter"
+
+      # ── Test 3: single file, multi-property filter ────────────────────────
+      - name: Read a subset of properties from a single file
+        id: read-subset
+        uses: ./
+        with:
+          file: __fixtures__/config.properties
+          file-properties: |
+            db.host
+            db.name
+
+      - name: Verify subset outputs
+        run: |
+          if [ "${{ steps.read-subset.outputs['config.db.host'] }}" != "localhost" ]; then
+            echo "FAIL: config.db.host expected 'localhost'"
+            exit 1
+          fi
+          if [ "${{ steps.read-subset.outputs['config.db.name'] }}" != "myapp" ]; then
+            echo "FAIL: config.db.name expected 'myapp'"
+            exit 1
+          fi
+          echo "PASS: single file, multi-property filter"
+
+      # ── Test 4: multiple files with deduplication ─────────────────────────
+      - name: Read multiple files (including duplicate stem)
+        id: read-multi
+        uses: ./
+        with:
+          files: |
+            __fixtures__/config.properties
+            __fixtures__/edge-cases.properties
+
+      - name: Verify multi-file outputs and stem deduplication
+        run: |
+          if [ "${{ steps.read-multi.outputs['config.db.host'] }}" != "localhost" ]; then
+            echo "FAIL: config.db.host expected 'localhost'"
+            exit 1
+          fi
+          if [ "${{ steps.read-multi.outputs['edge-cases.server'] }}" != "example.com" ]; then
+            echo "FAIL: edge-cases.server expected 'example.com'"
+            exit 1
+          fi
+          if [ "${{ steps.read-multi.outputs['edge-cases.timeout'] }}" != "30" ]; then
+            echo "FAIL: edge-cases.timeout expected '30'"
+            exit 1
+          fi
+          echo "PASS: multiple files"
+
+      # ── Test 5: edge-case syntax ──────────────────────────────────────────
+      - name: Read edge-case syntax file
+        id: read-edge
+        uses: ./
+        with:
+          file: __fixtures__/edge-cases.properties
+
+      - name: Verify edge-case syntax is parsed correctly
+        run: |
+          # Colon separator
+          if [ "${{ steps.read-edge.outputs['edge-cases.server'] }}" != "example.com" ]; then
+            echo "FAIL: colon separator — edge-cases.server expected 'example.com'"
+            exit 1
+          fi
+          # Continuation line
+          if [ "${{ steps.read-edge.outputs['edge-cases.long.value'] }}" != "first part second part third part" ]; then
+            echo "FAIL: continuation — edge-cases.long.value expected 'first part second part third part'"
+            exit 1
+          fi
+          # Value containing equals sign
+          if [ "${{ steps.read-edge.outputs['edge-cases.connection.string'] }}" != "host=localhost;port=5432" ]; then
+            echo "FAIL: equals in value — edge-cases.connection.string expected 'host=localhost;port=5432'"
+            exit 1
+          fi
+          echo "PASS: edge-case syntax"
